@@ -20,7 +20,8 @@
     <mvc:resources mapping="/css/**" location="/css/"/>
     <mvc:resources mapping="/js/**" location="/js/"/>
     <!-- 引用dubbo服务 -->
-    <dubbo:application name="e3-manager-web"/>
+    <dubbo:application name="taotao-manager-web"/>
     <dubbo:registry protocol="zookeeper" address="192.168.114.128:2181,192.168.114.128:2182,192.168.114.128:2183"/>
     <dubbo:reference interface="com.taotao.service.ItemService" id="itemService" />
+    <dubbo:reference interface="com.taotao.service.ItemCatService" id="itemCatService"/>
 </beans>

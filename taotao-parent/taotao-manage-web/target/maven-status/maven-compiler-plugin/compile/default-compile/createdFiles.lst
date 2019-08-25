@@ -1,2 +1,3 @@
-com\taotao\control\ItemControl.class
-com\taotao\control\PageControl.class
+com\taotao\control\ItemCatController.class
+com\taotao\control\PageController.class
+com\taotao\control\ItemController.class
