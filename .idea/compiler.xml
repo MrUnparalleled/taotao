@@ -15,14 +15,17 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="1.8">
-      <module name="taotao-common" target="1.7" />
-      <module name="taotao-manage" target="1.7" />
-      <module name="taotao-manage-dao" target="1.7" />
-      <module name="taotao-manage-interface" target="1.7" />
-      <module name="taotao-manage-pojo" target="1.7" />
-      <module name="taotao-manage-service" target="1.7" />
-      <module name="taotao-manage-web" target="1.7" />
-      <module name="taotao-parent" target="1.7" />
+      <module name="taotao-common" target="1.8" />
+      <module name="taotao-manage" target="1.8" />
+      <module name="taotao-manage-dao" target="1.8" />
+      <module name="taotao-manage-interface" target="1.8" />
+      <module name="taotao-manage-pojo" target="1.8" />
+      <module name="taotao-manage-service" target="1.8" />
+      <module name="taotao-manage-web" target="1.8" />
+      <module name="taotao-parent" target="1.8" />
     </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="PREFER_TARGET_JDK_COMPILER" value="false" />
   </component>
 </project>
