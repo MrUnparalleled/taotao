@@ -13,4 +13,13 @@ public interface ItemService {
     public TaotaoResult addItem(TbItem tbItem,String desc);
 
 
+    public TaotaoResult getItemDesc(Long itemId);
+
+    public TaotaoResult deleteItems(String ids);
+
+    public TaotaoResult upItems(String ids);
+
+    public TaotaoResult downItems(String ids);
+
+    public TaotaoResult editItem(TbItem tbItem, String desc);
 }

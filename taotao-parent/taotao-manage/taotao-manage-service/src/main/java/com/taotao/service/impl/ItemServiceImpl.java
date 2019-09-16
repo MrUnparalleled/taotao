@@ -14,7 +14,6 @@ import com.taotao.service.ItemService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.xml.crypto.Data;
 import java.util.Date;
 import java.util.List;
 
@@ -63,6 +62,12 @@ public class ItemServiceImpl implements ItemService {
         return result;
     }
 
+    /**
+     * 添加商品
+     * @param tbItem
+     * @param desc
+     * @return
+     */
     @Override
     public TaotaoResult addItem(TbItem tbItem, String desc) {
         //生成商品id
@@ -82,9 +87,115 @@ public class ItemServiceImpl implements ItemService {
         tbItemDesc.setCreated(new Date());
         tbItemDesc.setUpdated(new Date());
         //向商品描述表插入数据
-        itemDescMapper.insert(tbItemDesc);
+        int insert = itemDescMapper.insert(tbItemDesc);
         //返回成功
         TaotaoResult ok = TaotaoResult.ok();
         return ok;
     }
+
+
+    /**
+     * 根据商品id获得商品描述
+     * @param itemId
+     * @return
+     */
+    @Override
+    public TaotaoResult getItemDesc(Long itemId) {
+        TbItemDesc tbItemDesc = itemDescMapper.selectByPrimaryKey(itemId);
+        TaotaoResult result =new TaotaoResult();
+        result.setData(tbItemDesc);
+        result.setStatus(200);
+        return result;
+    }
+
+    /**
+     * 批量删除商品
+     * @param ids
+     * @return
+     */
+    @Override
+    public TaotaoResult deleteItems(String ids) {
+        //判断ids不为空
+        if (ids!=null&&!"".equals(ids)){
+            String[] split = ids.split(",");
+            for (String id:split) {
+                itemMapper.deleteByPrimaryKey(Long.valueOf(id));
+                itemDescMapper.deleteByPrimaryKey(Long.valueOf(id));
+            }
+            return TaotaoResult.ok();
+        }
+        return null;
+    }
+
+    /**
+     * 商品上架
+     * @param ids
+     * @return
+     */
+    @Override
+    public TaotaoResult upItems(String ids) {
+        //判断ids不为空
+        if (ids!=null&&!"".equals(ids)){
+            String[] split = ids.split(",");
+            for (String id:split) {
+                //获取当前商品
+                TbItem tbItem = itemMapper.selectByPrimaryKey(Long.valueOf(id));
+                //1、正常  2、下架  3、删除
+                tbItem.setStatus((byte) 1);
+                //更新商品
+                itemMapper.updateByPrimaryKey(tbItem);
+            }
+            return TaotaoResult.ok();
+        }
+        return null;
+    }
+
+    /**
+     * 商品下架
+     * @param ids
+     * @return
+     */
+    @Override
+    public TaotaoResult downItems(String ids) {
+        //判断ids不为空
+        if (ids!=null&&!"".equals(ids)){
+            String[] split = ids.split(",");
+            for (String id:split) {
+                //获取当前商品
+                TbItem tbItem = itemMapper.selectByPrimaryKey(Long.valueOf(id));
+                //1、正常  2、下架  3、删除
+                tbItem.setStatus((byte) 2);
+                //更新商品
+                itemMapper.updateByPrimaryKey(tbItem);
+            }
+            return TaotaoResult.ok();
+        }
+        return null;
+    }
+
+    /**
+     * 编辑商品
+     * @param tbItem
+     * @param desc
+     * @return
+     */
+    @Override
+    public TaotaoResult editItem(TbItem tbItem, String desc) {
+        //补全商品属性
+        tbItem.setStatus((byte) 1);
+        tbItem.setCreated(new Date());
+        tbItem.setUpdated(new Date());
+        //更新商品表
+        itemMapper.updateByPrimaryKey(tbItem);
+        //创建商品描述的pojo，补全属性
+        TbItemDesc itemDesc =new TbItemDesc();
+        itemDesc.setItemId(tbItem.getId());
+        itemDesc.setItemDesc(desc);
+        itemDesc.setUpdated(new Date());
+        itemDesc.setCreated(new Date());
+        itemDescMapper.updateByPrimaryKey(itemDesc);
+        return TaotaoResult.ok();
+    }
+
+
 }
