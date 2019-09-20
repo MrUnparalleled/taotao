@@ -46,6 +46,12 @@ public class ItemServiceImpl implements ItemService {
 //        return null;
     }
 
+    /**
+     * 分页查询
+     * @param page
+     * @param rows
+     * @return
+     */
     @Override
     public EasyUIDataGridResult getItemList(Integer page, Integer rows) {
         //设置分页信息
