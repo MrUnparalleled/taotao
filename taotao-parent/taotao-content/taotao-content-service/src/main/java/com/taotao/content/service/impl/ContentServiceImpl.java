@@ -1,15 +1,23 @@
 package com.taotao.content.service.impl;
 
+import com.alibaba.dubbo.common.json.JSON;
+import com.alibaba.dubbo.common.json.JSONObject;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.taotao.common.jedis.JedisClient;
+import com.taotao.common.jedis.JedisClientCluster;
 import com.taotao.common.pojo.EasyUIDataGridResult;
 import com.taotao.common.utils.IDUtils;
+import com.taotao.common.utils.JsonUtils;
 import com.taotao.common.utils.TaotaoResult;
 import com.taotao.content.service.ContentService;
 import com.taotao.mapper.TbContentMapper;
 import com.taotao.pojo.TbContent;
 import com.taotao.pojo.TbContentExample;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -21,6 +29,9 @@ public class ContentServiceImpl implements ContentService {
     @Autowired
     private TbContentMapper contentMapper;
 
+    @Autowired
+    private JedisClient jedisClient;
+
     /**
      * 分页查询
      * @param categoryId
@@ -30,19 +41,30 @@ public class ContentServiceImpl implements ContentService {
      */
     @Override
     public EasyUIDataGridResult getContentList(Long categoryId, Integer page, Integer rows) {
+        List<TbContent> list;
+        //查询缓存
+        String json = jedisClient.hget("CONTENT_KEY", categoryId + "");
+        //判断json是否为空
+        if (StringUtils.isNotBlank(json)){
+            //把json转换成list
+            list = JsonUtils.jsonToList(json, TbContent.class);
+        }else {
+            //执行查询
+            TbContentExample example = new TbContentExample();
+            TbContentExample.Criteria criteria = example.createCriteria();
+            criteria.andCategoryIdEqualTo(categoryId);
+            list = contentMapper.selectByExample(example);
+        }
         //设置分页信息
         PageHelper.startPage(page,rows);
-        //执行查询
-        TbContentExample example = new TbContentExample();
-        TbContentExample.Criteria criteria = example.createCriteria();
-        criteria.andCategoryIdEqualTo(categoryId);
-        List<TbContent> list = contentMapper.selectByExample(example);
         //创建一个返回值对象
         EasyUIDataGridResult result = new EasyUIDataGridResult();
         result.setRows(list);
         //取分页结果
         PageInfo<TbContent> pageInfo =new PageInfo<>(list);
         result.setTotal((int) pageInfo.getTotal());
+        //将信息存储到缓存当中
+        jedisClient.hset("CONTENT_KEY",categoryId+"",JsonUtils.objectToJson(list));
         return result;
     }
 
@@ -61,6 +83,14 @@ public class ContentServiceImpl implements ContentService {
         content.setUpdated(new Date());
         //插入数据
         contentMapper.insert(content);
+        //缓存同步
+        String json = jedisClient.hget("CONTENT_KEY", content.getCategoryId().toString());
+        if (StringUtils.isNotBlank(json)){
+            //把json转换成list
+            List<TbContent> list = JsonUtils.jsonToList(json, TbContent.class);
+            list.add(content);
+            jedisClient.hset("CONTENT_KEY",content.getCategoryId()+"",JsonUtils.objectToJson(list));
+        }
         return TaotaoResult.ok();
     }
 
@@ -79,6 +109,18 @@ public class ContentServiceImpl implements ContentService {
         content.setUpdated(new Date());
         //2.更新数据
         contentMapper.updateByPrimaryKey(content);
+        //同步缓存
+        String json = jedisClient.hget("CONTENT_KEY", content.getCategoryId().toString());
+        if (StringUtils.isNotBlank(json)){
+            //把json转换成list
+            List<TbContent> list = JsonUtils.jsonToList(json, TbContent.class);
+            for (TbContent tbContent:list) {
+                if (tbContent.getId().equals(content.getId())){
+                    list.remove(tbContent);
+                    list.add(content);
+                }
+            }
+        }
         return TaotaoResult.ok();
     }
 
@@ -97,6 +139,9 @@ public class ContentServiceImpl implements ContentService {
             for (String id:split) {
                 //删除
                 contentMapper.deleteByPrimaryKey(Long.valueOf(id));
+                //缓存同步
+                //清除缓存
+                jedisClient.hdel("CONTENT_KEY");
             }
             return TaotaoResult.ok();
         }
@@ -109,11 +154,19 @@ public class ContentServiceImpl implements ContentService {
      */
     @Override
     public List<TbContent> getContentListByCid(Long cid) {
+        //查询缓存
+        String json = jedisClient.hget("CONTENT_KEY", cid + "");
+        if (StringUtils.isNotBlank(json)){
+            List<TbContent> list = JsonUtils.jsonToList(json, TbContent.class);
+            return list;
+        }
         TbContentExample example  = new TbContentExample();
         TbContentExample.Criteria criteria = example.createCriteria();
         //设置查询条件
         criteria.andCategoryIdEqualTo(cid);
         List<TbContent> tbContents = contentMapper.selectByExampleWithBLOBs(example);
+        //缓存同步
+        jedisClient.hset("CONTENT_KEY",cid+"",JsonUtils.objectToJson(tbContents));
         return tbContents;
     }
 
