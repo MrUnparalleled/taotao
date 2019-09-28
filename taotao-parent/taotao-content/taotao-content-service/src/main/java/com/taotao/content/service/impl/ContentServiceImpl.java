@@ -21,7 +21,9 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class ContentServiceImpl implements ContentService {
@@ -81,8 +83,6 @@ public class ContentServiceImpl implements ContentService {
         content.setId(id);
         content.setCreated(new Date());
         content.setUpdated(new Date());
-        //插入数据
-        contentMapper.insert(content);
         //缓存同步
         String json = jedisClient.hget("CONTENT_KEY", content.getCategoryId().toString());
         if (StringUtils.isNotBlank(json)){
@@ -91,6 +91,8 @@ public class ContentServiceImpl implements ContentService {
             list.add(content);
             jedisClient.hset("CONTENT_KEY",content.getCategoryId()+"",JsonUtils.objectToJson(list));
         }
+        //插入数据
+        contentMapper.insert(content);
         return TaotaoResult.ok();
     }
 
@@ -107,20 +109,11 @@ public class ContentServiceImpl implements ContentService {
         Date created = content1.getCreated();
         content.setCreated(created);
         content.setUpdated(new Date());
+        //缓存同步
+        //清除缓存
+        jedisClient.hdel("CONTENT_KEY",content.getCategoryId().toString());
         //2.更新数据
         contentMapper.updateByPrimaryKey(content);
-        //同步缓存
-        String json = jedisClient.hget("CONTENT_KEY", content.getCategoryId().toString());
-        if (StringUtils.isNotBlank(json)){
-            //把json转换成list
-            List<TbContent> list = JsonUtils.jsonToList(json, TbContent.class);
-            for (TbContent tbContent:list) {
-                if (tbContent.getId().equals(content.getId())){
-                    list.remove(tbContent);
-                    list.add(content);
-                }
-            }
-        }
         return TaotaoResult.ok();
     }
 
@@ -137,11 +130,12 @@ public class ContentServiceImpl implements ContentService {
             return null;
         }else {
             for (String id:split) {
+                //缓存同步
+                TbContent tbContent = contentMapper.selectByPrimaryKey(Long.valueOf(id));
+                //清除缓存
+                jedisClient.hdel("CONTENT_KEY",tbContent.getCategoryId().toString());
                 //删除
                 contentMapper.deleteByPrimaryKey(Long.valueOf(id));
-                //缓存同步
-                //清除缓存
-                jedisClient.hdel("CONTENT_KEY");
             }
             return TaotaoResult.ok();
         }
