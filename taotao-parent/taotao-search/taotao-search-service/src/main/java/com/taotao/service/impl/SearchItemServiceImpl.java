@@ -4,13 +4,11 @@ import com.taotao.common.pojo.SearchItem;
 import com.taotao.common.utils.TaotaoResult;
 import com.taotao.mapper.ItemMapper;
 import com.taotao.service.SearchItemService;
-import org.apache.solr.client.solrj.SolrServer;
-import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.CloudSolrServer;
 import org.apache.solr.common.SolrInputDocument;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -23,7 +21,7 @@ public class SearchItemServiceImpl implements SearchItemService {
     private ItemMapper itemMapper;
 
     @Autowired
-    private SolrServer httpSolrServer;
+    private CloudSolrServer cloudSolrServer;
 
     @Override
     public TaotaoResult importAllItems() {
@@ -42,10 +40,10 @@ public class SearchItemServiceImpl implements SearchItemService {
                 document.addField("item_image",searchItem.getImage());
                 document.addField("item_category_name",searchItem.getCategory_name());
                 //把对象文档写入索引库
-                httpSolrServer.add(document);
+                cloudSolrServer.add(document);
             }
             //提交
-            httpSolrServer.commit();
+            cloudSolrServer.commit();
             //返回导入成功
             return TaotaoResult.ok();
         }catch (Exception e) {

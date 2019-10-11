@@ -4,8 +4,10 @@ package com.taotao;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.CloudSolrServer;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
@@ -109,4 +111,25 @@ public class SolrTest {
         //6.commit
         solrServer.commit();
     }
+
+    @Test
+    public void test6() throws IOException, SolrServerException {
+        //1.将solrj的包加到工程当中
+        //2.创建一个solrServer对象，需要用cloudSolrServer子类。构造方法的参数是zookeeper的地址列表
+        //参数是zookeeper的地址列表，使用逗号分割
+        CloudSolrServer solrServer = new CloudSolrServer("192.168.25.130:2181,192.168.25.130:2182,192.168.25.130:2183");
+        //3.设置defaultcollection属性
+        solrServer.setDefaultCollection("collection2");
+        //4.创建一个solrInputDocument对象
+        SolrInputDocument document = new SolrInputDocument();
+        //5.向文档对象中添加域
+        document.addField("item_title","测试商品");
+        document.addField("item_price","100");
+        document.addField("id","test001");
+        //6.将文档写入索引库
+        solrServer.add(document);
+        //7.提交
+        solrServer.commit();
+    }
+
 }

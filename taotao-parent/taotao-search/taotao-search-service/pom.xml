@@ -22,6 +22,12 @@
             <artifactId>taotao-search-interface</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        <!-- solr客户端 -->
+        <dependency>
+            <groupId>org.apache.solr</groupId>
+            <artifactId>solr-solrj</artifactId>
+            <version>${solrj.version}</version>
+        </dependency>
         <!-- dubbo相关 -->
         <dependency>
             <groupId>com.alibaba</groupId>
