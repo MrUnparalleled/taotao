@@ -3,6 +3,7 @@ package com.taotao.service;
 import com.taotao.common.pojo.EasyUIDataGridResult;
 import com.taotao.common.utils.TaotaoResult;
 import com.taotao.pojo.TbItem;
+import com.taotao.pojo.TbItemDesc;
 
 public interface ItemService {
 
@@ -22,4 +23,8 @@ public interface ItemService {
     public TaotaoResult downItems(String ids);
 
     public TaotaoResult editItem(TbItem tbItem, String desc);
+
+    public TbItemDesc getItemDescById(long itemId);
+
+    public TbItem getTbItemById(long itemId);
 }

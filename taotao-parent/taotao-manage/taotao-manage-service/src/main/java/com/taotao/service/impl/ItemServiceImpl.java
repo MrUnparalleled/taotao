@@ -2,8 +2,10 @@ package com.taotao.service.impl;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.taotao.common.jedis.JedisClient;
 import com.taotao.common.pojo.EasyUIDataGridResult;
 import com.taotao.common.utils.IDUtils;
+import com.taotao.common.utils.JsonUtils;
 import com.taotao.common.utils.TaotaoResult;
 import com.taotao.mapper.TbItemDescMapper;
 import com.taotao.mapper.TbItemMapper;
@@ -11,9 +13,14 @@ import com.taotao.pojo.TbItem;
 import com.taotao.pojo.TbItemDesc;
 import com.taotao.pojo.TbItemExample;
 import com.taotao.service.ItemService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessageCreator;
 import org.springframework.stereotype.Service;
 
+import javax.jms.*;
 import java.util.Date;
 import java.util.List;
 
@@ -23,16 +30,46 @@ import java.util.List;
 @Service
 public class ItemServiceImpl implements ItemService {
 
+    @Value("${ITEM_INFO_EXPIRE}")
+    private Integer ITEM_INFO_EXPIRE;
+
     @Autowired
     private TbItemMapper itemMapper;
     @Autowired
     private TbItemDescMapper itemDescMapper;
-
+    @Autowired
+    private JmsTemplate jmsTemplate;
+    @Autowired
+    private Destination topicDestination;
+    @Autowired
+    private JedisClient jedisClient;
 
     @Override
     public TbItem getItemById(Long id) {
+        try {
+            //查询缓存
+            String json = jedisClient.get( "ITEM_INFO_PRE:" + id + ":BASE");
+            if (StringUtils.isNotBlank(json)) {
+                //把json转换为java对象
+                TbItem item = JsonUtils.jsonToPojo(json, TbItem.class);
+                return item;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 //        根据主键查询
         TbItem item = itemMapper.selectByPrimaryKey(id);
+        if (item!=null){
+            try {
+                //把数据保存到缓存
+                jedisClient.set("ITEM_INFO_PRE:" + id + ":BASE", JsonUtils.objectToJson(item));
+                jedisClient.set( "ITEM_INFO_PRE:" + id + ":BASE", JsonUtils.objectToJson(item));
+                //设置缓存的有效期
+                jedisClient.expire("ITEM_INFO_PRE:" + id + ":BASE", ITEM_INFO_EXPIRE);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         return item;
 //        TbItemExample example =new TbItemExample();
 //        TbItemExample.Criteria criteria = example.createCriteria();
@@ -94,6 +131,16 @@ public class ItemServiceImpl implements ItemService {
         tbItemDesc.setUpdated(new Date());
         //向商品描述表插入数据
         int insert = itemDescMapper.insert(tbItemDesc);
+
+        //发送一个商品添加消息
+        jmsTemplate.send(topicDestination, new MessageCreator() {
+
+            @Override
+            public Message createMessage(Session session) throws JMSException {
+                TextMessage textMessage = session.createTextMessage(id + "");
+                return textMessage;
+            }
+        });
         //返回成功
         TaotaoResult ok = TaotaoResult.ok();
         return ok;
@@ -107,8 +154,28 @@ public class ItemServiceImpl implements ItemService {
      */
     @Override
     public TaotaoResult getItemDesc(Long itemId) {
-        TbItemDesc tbItemDesc = itemDescMapper.selectByPrimaryKey(itemId);
         TaotaoResult result =new TaotaoResult();
+        try {
+            String json = jedisClient.get("ITEM_INFO_PRE:" + itemId + ":DESC");
+            //判断缓存是否命中
+            if (StringUtils.isNotBlank(json) ) {
+                //转换为java对象
+                TbItemDesc itemDesc = JsonUtils.jsonToPojo(json, TbItemDesc.class);
+                result.setData(itemDesc);
+                result.setStatus(200);
+                return result;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        TbItemDesc tbItemDesc = itemDescMapper.selectByPrimaryKey(itemId);
+        try {
+            jedisClient.set("ITEM_INFO_PRE:" + itemId + ":DESC", JsonUtils.objectToJson(tbItemDesc));
+            //设置过期时间
+            jedisClient.expire("ITEM_INFO_PRE:" + itemId + ":DESC", ITEM_INFO_EXPIRE);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         result.setData(tbItemDesc);
         result.setStatus(200);
         return result;
@@ -203,5 +270,33 @@ public class ItemServiceImpl implements ItemService {
         return TaotaoResult.ok();
     }
 
+    /**
+     * 根据商品id查询商品描述
+     * @param itemId
+     * @return
+     */
+    @Override
+    public TbItemDesc getItemDescById(long itemId) {
+        TbItemDesc tbItemDesc = itemDescMapper.selectByPrimaryKey(itemId);
+        return tbItemDesc;
+    }
+
+    /**
+     * 根据商品id查询商品信息
+     * @param itemId
+     * @return
+     */
+    @Override
+    public TbItem getTbItemById(long itemId) {
+        TbItemExample itemExample = new TbItemExample();
+        TbItemExample.Criteria criteria = itemExample.createCriteria();
+        criteria.andIdEqualTo(itemId);
+        List<TbItem> list = itemMapper.selectByExample(itemExample);
+        if (list!=null&&list.size()>0){
+            TbItem tbItem = list.get(0);
+            return tbItem;
+        }
+        return null;
+    }
 
 }

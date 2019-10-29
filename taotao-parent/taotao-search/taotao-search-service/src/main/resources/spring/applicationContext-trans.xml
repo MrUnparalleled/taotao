@@ -32,4 +32,5 @@
         <aop:advisor advice-ref="txAdvice"
                      pointcut="execution(* com.taotao.service.*.*(..))" />
     </aop:config>
+    <aop:config proxy-target-class="true"/>
 </beans>

@@ -18,6 +18,7 @@
     <module>taotao-manage</module>
     <module>taotao-manage-web</module>
       <module>taotao-portal-web</module>
+      <module>taotao-item-web</module>
   </modules>
 
   <!-- 集中定义依赖版本号 -->
