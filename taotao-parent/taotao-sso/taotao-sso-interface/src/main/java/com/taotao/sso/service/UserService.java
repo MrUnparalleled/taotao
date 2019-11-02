@@ -13,4 +13,6 @@ public interface UserService {
 
     TaotaoResult getUserByToken(String token);
 
+    TaotaoResult logout(String token);
+
 }

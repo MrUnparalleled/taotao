@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.awt.*;
 
 @Controller
 public class UserControl {
@@ -26,16 +25,36 @@ public class UserControl {
         return result;
     }
 
+    /**
+     * 根据cookie中的token获取登录是否过期
+     * @param token
+     * @param callback
+     * @return
+     */
     @RequestMapping(value = "/user/token/{token}",produces = MediaType.APPLICATION_JSON_VALUE+";charset=utf-8")
     @ResponseBody
     public String getUserByToken(@PathVariable String token,String callback){
         TaotaoResult result = userService.getUserByToken(token);
         //是否为jsonp请求
-        if (StringUtils.isBlank(callback)){
-            String strResult = callback+"("+ JsonUtils.objectToJson(result) +")";
+        if (!StringUtils.isBlank(callback)){
+            String strResult = callback+"("+ JsonUtils.objectToJson(result) +");";
             return strResult;
         }
         return JsonUtils.objectToJson(result);
     }
+
+
+    @RequestMapping(value = "/user/logout/{token}", produces = MediaType.APPLICATION_JSON_VALUE+";charset=utf-8")
+    @ResponseBody
+    public String logout(@PathVariable String token,String callback){
+        TaotaoResult result = userService.logout(token);
+        //是否为jsonp请求
+        if (!StringUtils.isBlank(callback)){
+            String strResult = callback+"("+ JsonUtils.objectToJson(result) +");";
+            return strResult;
+        }
+        return JsonUtils.objectToJson(result);
+    }
+
 
 }

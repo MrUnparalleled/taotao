@@ -40,7 +40,7 @@ public class LoginControl {
         TaotaoResult result = userService.login(username,password);
         //从返回结果中取token，将token放入cookie中
         String token = result.getData().toString();
-        CookieUtils.setCookie(request,response,"COOKIE_TOKEN_KEY",token);
+        CookieUtils.setCookie(request,response,"TT_TOKEN",token);
         return result;
     }
 }

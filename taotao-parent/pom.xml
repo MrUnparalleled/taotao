@@ -20,6 +20,10 @@
       <module>taotao-portal-web</module>
       <module>taotao-item-web</module>
       <module>taotao-sso</module>
+      <module>taotao-cart-web</module>
+    <module>taotao-order</module>
+    <module>taotao-order-web</module>
+      <module>taotao-cart</module>
   </modules>
 
   <!-- 集中定义依赖版本号 -->

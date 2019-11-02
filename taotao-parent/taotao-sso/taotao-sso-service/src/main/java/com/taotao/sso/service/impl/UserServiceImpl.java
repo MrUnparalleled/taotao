@@ -149,4 +149,18 @@ public class UserServiceImpl implements UserService {
         TbUser user = JsonUtils.jsonToPojo(json, TbUser.class);
         return TaotaoResult.ok(user);
     }
+
+    /**
+     * 退出
+     * @param token
+     * @return
+     */
+    @Override
+    public TaotaoResult logout(String token) {
+        //设置redis过期时间
+        jedisClient.expire("USER_INFO" + ":" + token,0);
+        return TaotaoResult.ok();
+    }
+
+
 }
