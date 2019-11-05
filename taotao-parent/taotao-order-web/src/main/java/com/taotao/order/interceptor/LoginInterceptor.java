@@ -28,7 +28,7 @@ public class LoginInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         //从cookie中取token
-        String token = CookieUtils.getCookieValue(request, "token");
+        String token = CookieUtils.getCookieValue(request, "TT_TOKEN");
         //判断token是否存在
         if (StringUtils.isBlank(token)) {
             //如果token不存在，未登录状态，跳转到sso系统的登录页面。用户登录成功后，跳转到当前请求的url
@@ -49,7 +49,7 @@ public class LoginInterceptor implements HandlerInterceptor {
         TbUser user = (TbUser) e3Result.getData();
         request.setAttribute("user", user);
         //判断cookie中是否有购物车数据，如果有就合并到服务端。
-        String jsonCartList = CookieUtils.getCookieValue(request, "cart", true);
+        String jsonCartList = CookieUtils.getCookieValue(request, "TT_CART", true);
         if (StringUtils.isNoneBlank(jsonCartList)) {
             //合并购物车
             cartService.mergeCart(user.getId(), JsonUtils.jsonToList(jsonCartList, TbItem.class));
